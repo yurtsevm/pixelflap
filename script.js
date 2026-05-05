@@ -351,10 +351,29 @@ function update() {
     pipes.update();
 }
 
-function loop() {
-    update();
+let lastTime = 0;
+let accumulator = 0;
+// Oyun hızını cihazın yenileme hızından bağımsız hale getirmek için sabit zaman adımı (120 FPS'e sabitlendi)
+const TIME_STEP = 1000 / 120;
+
+function loop(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    let dt = timestamp - lastTime;
+    
+    // Sekme arka planda kaldığında devasa atlamaları engelle
+    if (dt > 100) dt = 100;
+    
+    lastTime = timestamp;
+    accumulator += dt;
+
+    while (accumulator >= TIME_STEP) {
+        update();
+        frames++;
+        accumulator -= TIME_STEP;
+    }
+    
     draw();
-    frames++;
+    
     if (gameState === 'play') {
         requestAnimationFrame(loop);
     }
@@ -375,7 +394,9 @@ function startGame() {
     gameOverScreen.classList.add('hidden');
     
     bird.flap();
-    loop();
+    lastTime = 0;
+    accumulator = 0;
+    requestAnimationFrame(loop);
 }
 
 function gameOver() {
