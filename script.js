@@ -136,17 +136,16 @@ const bird = {
         
         ctx.restore();
     },
-    update() {
+    update(dtMultiplier = 1) {
         let currentGravity = this.gravity;
         // Kuş tepe noktasındayken (hızı sıfıra yakınken) yerçekimini geçici olarak azalt
-        // Böylece düşmeye başlamadan önce havada biraz daha asılı kalır
         if (this.velocity > -1.5 && this.velocity < 2) {
             currentGravity = this.gravity * 0.4;
         }
         
-        this.velocity += currentGravity;
+        this.velocity += currentGravity * dtMultiplier;
         if (this.velocity > 6) this.velocity = 6;
-        this.y += this.velocity;
+        this.y += this.velocity * dtMultiplier;
         
         // Yere Çarpma Kontrolü (Canvas'ın en altı)
         if (this.y + this.radius >= canvas.height) {
@@ -207,15 +206,15 @@ const pipes = {
             ctx.strokeRect(p.x - 6, canvas.height - p.bottom, this.width + 12, 24);
         }
     },
-    update() {
+    update(dtMultiplier = 1) {
         let currentDx = this.baseDx;
         if (score > 5) {
             currentDx += (score - 5) * 0.08;
             currentDx = Math.min(currentDx, 4);
         }
 
-        let requiredFrames = Math.floor(this.pipeDistance / currentDx);
-        this.framesSinceLastPipe++;
+        let requiredFrames = this.pipeDistance / currentDx;
+        this.framesSinceLastPipe += dtMultiplier;
 
         if (this.framesSinceLastPipe >= requiredFrames) {
             let topPosition = Math.random() * (canvas.height - this.gap - 100) + 50;
@@ -226,12 +225,12 @@ const pipes = {
                 bottom: bottomPosition,
                 passed: false
             });
-            this.framesSinceLastPipe = 0;
+            this.framesSinceLastPipe -= requiredFrames;
         }
         
         for (let i = 0; i < this.items.length; i++) {
             let p = this.items[i];
-            p.x -= currentDx;
+            p.x -= currentDx * dtMultiplier;
             
             // Kare Çarpışma Tespiti
             let birdLeft = bird.x - bird.radius;
@@ -266,7 +265,7 @@ const pipes = {
     }
 };
 
-function drawBackground() {
+function drawBackground(dtMultiplier = 1) {
     // Hava durumuna göre arkaplan rengi
     if (currentWeather === 'rain') {
         ctx.fillStyle = '#6ab1b5'; // Kapalı hava
@@ -292,7 +291,7 @@ function drawBackground() {
     // Bulutları Çiz
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
     clouds.forEach(cloud => {
-        cloud.x -= (currentWeather === 'rain' ? 0.6 : 0.3); // Yağmurlu havada bulutlar daha hızlı
+        cloud.x -= (currentWeather === 'rain' ? 0.6 : 0.3) * dtMultiplier; // Yağmurlu havada bulutlar daha hızlı
         if (cloud.x + cloud.w < 0) {
             cloud.x = canvas.width + 50;
             cloud.y = Math.random() * (canvas.height / 2);
@@ -313,8 +312,8 @@ function drawBackground() {
             ctx.stroke();
             
             if (gameState === 'play') {
-                p.y += p.speed;
-                p.x -= p.speed * 0.2;
+                p.y += p.speed * dtMultiplier;
+                p.x -= p.speed * 0.2 * dtMultiplier;
                 if (p.y > canvas.height) {
                     p.y = -20;
                     p.x = Math.random() * canvas.width + 100;
@@ -329,8 +328,8 @@ function drawBackground() {
             ctx.fill();
             
             if (gameState === 'play') {
-                p.y += p.speed;
-                p.x += Math.sin(frames * 0.05 + p.y) * p.drift;
+                p.y += p.speed * dtMultiplier;
+                p.x += Math.sin(frames * 0.05 + p.y) * p.drift * dtMultiplier;
                 if (p.y > canvas.height) {
                     p.y = -10;
                     p.x = Math.random() * canvas.width;
@@ -340,22 +339,19 @@ function drawBackground() {
     }
 }
 
-function draw() {
-    drawBackground();
+function draw(dtMultiplier = 1) {
+    drawBackground(dtMultiplier);
     bird.draw();
     pipes.draw();
 }
 
-function update() {
+function update(dtMultiplier) {
     if (gameState !== 'play') return;
-    bird.update();
-    pipes.update();
+    bird.update(dtMultiplier);
+    pipes.update(dtMultiplier);
 }
 
 let lastTime = 0;
-let accumulator = 0;
-// Oyun hızını cihazın yenileme hızından bağımsız hale getirmek için sabit zaman adımı (200 FPS'e sabitlendi)
-const TIME_STEP = 1000 / 200;
 
 function loop(timestamp) {
     if (!lastTime) lastTime = timestamp;
@@ -363,17 +359,15 @@ function loop(timestamp) {
     
     // Sekme arka planda kaldığında devasa atlamaları engelle
     if (dt > 100) dt = 100;
-    
     lastTime = timestamp;
-    accumulator += dt;
-
-    while (accumulator >= TIME_STEP) {
-        update();
-        frames++;
-        accumulator -= TIME_STEP;
-    }
     
-    draw();
+    // Referans cihaz 200Hz olduğu için, taban gecikmeyi 5ms (1000/200) alıyoruz.
+    let dtMultiplier = dt / 5;
+
+    update(dtMultiplier);
+    frames += dtMultiplier;
+    
+    draw(dtMultiplier);
     
     if (gameState === 'play') {
         requestAnimationFrame(loop);
@@ -396,7 +390,6 @@ function startGame() {
     
     bird.flap();
     lastTime = 0;
-    accumulator = 0;
     requestAnimationFrame(loop);
 }
 
