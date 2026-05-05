@@ -353,8 +353,8 @@ function update() {
 
 let lastTime = 0;
 let accumulator = 0;
-// Oyun hızını cihazın yenileme hızından bağımsız hale getirmek için sabit zaman adımı (120 FPS'e sabitlendi)
-const TIME_STEP = 1000 / 120;
+// Oyun hızını cihazın yenileme hızından bağımsız hale getirmek için sabit zaman adımı (200 FPS'e sabitlendi)
+const TIME_STEP = 1000 / 200;
 
 function loop(timestamp) {
     if (!lastTime) lastTime = timestamp;
