@@ -29,21 +29,38 @@ const colors = {
 
 // Mağaza ve Kuş Tipleri
 const skins = [
-    { id: 0, name: 'Sarı', color: '#ffc107', beak: '#e53935' },
-    { id: 1, name: 'Kırmızı', color: '#f44336', beak: '#ffeb3b' },
-    { id: 2, name: 'Mavi', color: '#29b6f6', beak: '#ff9800' },
-    { id: 3, name: 'Yeşil', color: '#66bb6a', beak: '#ff5722' },
-    { id: 4, name: 'Siyah', color: '#424242', beak: '#ffeb3b' },
-    { id: 5, name: 'Pembe', color: '#e91e63', beak: '#ffeb3b' }
+    { id: 0, name: 'Sarı', type: 'color', color: '#ffc107', beak: '#e53935' },
+    { id: 1, name: 'Kırmızı', type: 'color', color: '#f44336', beak: '#ffeb3b' },
+    { id: 2, name: 'Mavi', type: 'color', color: '#29b6f6', beak: '#ff9800' },
+    { id: 3, name: 'Yeşil', type: 'color', color: '#66bb6a', beak: '#ff5722' },
+    { id: 4, name: 'Siyah', type: 'color', color: '#424242', beak: '#ffeb3b' },
+    { id: 5, name: 'Pembe', type: 'color', color: '#e91e63', beak: '#ffeb3b' },
+    { id: 6, name: 'Aslan', type: 'color', color: '#fb8c00', beak: '#8d6e63' },
+    { id: 7, name: 'Kanarya', type: 'color', color: '#ffee58', beak: '#f57c00' },
+    { id: 8, name: 'Kaplan', type: 'color', color: '#800000', beak: '#212121' },
+    { id: 9, name: 'Kartal', type: 'color', color: '#4e342e', beak: '#fdd835' },
+    { id: 10, name: 'Timsah', type: 'color', color: '#388e3c', beak: '#81c784' }
 ];
-let currentSkinId = parseInt(localStorage.getItem('pixelFlapSkin')) || 0;
 
-function updateBirdColors() {
-    let skin = skins.find(s => s.id === currentSkinId) || skins[0];
-    colors.bird = skin.color;
-    colors.birdBeak = skin.beak;
+// Resimleri önyükle
+skins.forEach(skin => {
+    if (skin.type === 'image') {
+        skin.img = new Image();
+        skin.img.src = skin.src;
+    }
+});
+
+let currentSkinId = parseInt(localStorage.getItem('pixelFlapSkin')) || 0;
+let currentSkin = skins[0];
+
+function updateBirdSkin() {
+    currentSkin = skins.find(s => s.id === currentSkinId) || skins[0];
+    if (currentSkin.type === 'color') {
+        colors.bird = currentSkin.color;
+        colors.birdBeak = currentSkin.beak;
+    }
 }
-updateBirdColors();
+updateBirdSkin();
 
 // Bulutlar (Arkaplan Süslemesi)
 const clouds = [
@@ -94,6 +111,160 @@ function generateWeather() {
 }
 
 // Kuş Objesi
+// Skin Çizim Yardımcı Fonksiyonu
+function drawSkinOnCtx(ctx, skin, radius) {
+    let baseColor = skin.type === 'color' ? skin.color : colors.bird;
+    let beakColor = skin.type === 'color' ? skin.beak : colors.birdBeak;
+
+    if (skin.type === 'image' && skin.img && skin.img.complete) {
+        ctx.drawImage(skin.img, -radius * 1.5, -radius * 1.5, radius * 3, radius * 3);
+    } else if (skin.name === 'Aslan') {
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = colors.birdOutline;
+        
+        ctx.fillStyle = '#ffca28'; 
+        ctx.beginPath();
+        for (let i = 0; i < 18; i++) {
+            let angle = (i * Math.PI * 2) / 18;
+            let r = (i % 2 === 0) ? radius + 8 : radius + 3;
+            ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+        }
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        ctx.fillStyle = baseColor; 
+        ctx.beginPath();
+        ctx.arc(-2, -radius + 2, 4, 0, Math.PI * 2);
+        ctx.arc(8, -radius + 1, 4, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+
+        ctx.fillStyle = '#ffe0b2';
+        ctx.beginPath();
+        ctx.ellipse(radius - 2, 5, 8, 5, 0, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+
+        ctx.fillStyle = '#212121';
+        ctx.beginPath();
+        ctx.moveTo(radius + 5, 2); ctx.lineTo(radius - 1, 1); ctx.lineTo(radius + 2, 6);
+        ctx.closePath(); ctx.fill();
+
+        ctx.fillStyle = 'white';
+        ctx.beginPath(); ctx.arc(radius - 6, -3, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        
+        ctx.fillStyle = 'black'; 
+        ctx.beginPath(); ctx.arc(radius - 4, -3, 2, 0, Math.PI * 2); ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(radius + 1, 5); ctx.lineTo(radius + 10, 4);
+        ctx.moveTo(radius + 2, 7); ctx.lineTo(radius + 11, 8);
+        ctx.stroke();
+    } else if (skin.name === 'Kaplan') {
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = colors.birdOutline;
+        
+        ctx.fillStyle = baseColor; 
+        ctx.beginPath();
+        ctx.arc(-4, -radius + 2, 4, 0, Math.PI * 2);
+        ctx.arc(6, -radius + 1, 4, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        
+        ctx.fillStyle = 'white'; 
+        ctx.beginPath();
+        ctx.arc(-4, -radius + 2, 1.5, 0, Math.PI * 2);
+        ctx.arc(6, -radius + 1, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = baseColor;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+
+        ctx.fillStyle = '#1e90ff';
+        ctx.fillRect(-2, -radius, 2, 6); ctx.fillRect(3, -radius, 2, 6);
+        ctx.fillRect(-radius, -2, 4, 2); ctx.fillRect(-radius, 3, 4, 2);
+
+        ctx.fillStyle = 'white';
+        ctx.beginPath(); ctx.ellipse(radius - 3, 5, 7, 5, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+        ctx.fillStyle = '#212121';
+        ctx.beginPath();
+        ctx.moveTo(radius + 3, 2); ctx.lineTo(radius - 3, 1); ctx.lineTo(radius, 5);
+        ctx.closePath(); ctx.fill();
+
+        ctx.fillStyle = 'white';
+        ctx.beginPath(); ctx.arc(radius - 6, -3, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = 'black'; 
+        ctx.beginPath(); ctx.arc(radius - 4, -3, 2, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.moveTo(radius - 1, 9); ctx.lineTo(radius + 1, 13); ctx.lineTo(radius + 3, 9);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(radius - 4, 5); ctx.lineTo(radius + 5, 4);
+        ctx.moveTo(radius - 3, 7); ctx.lineTo(radius + 6, 8);
+        ctx.stroke();
+    } else {
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = colors.birdOutline;
+        if (skin.name === 'Timsah') {
+            ctx.fillStyle = '#1b5e20';
+            ctx.fillRect(-10, -radius - 3, 4, 6); ctx.strokeRect(-10, -radius - 3, 4, 6);
+            ctx.fillRect(-2, -radius - 3, 4, 6); ctx.strokeRect(-2, -radius - 3, 4, 6);
+            ctx.fillRect(6, -radius - 3, 4, 6); ctx.strokeRect(6, -radius - 3, 4, 6);
+        } else if (skin.name === 'Kanarya') {
+            ctx.fillStyle = '#fbc02d';
+            ctx.fillRect(-2, -radius - 4, 4, 8); ctx.strokeRect(-2, -radius - 4, 4, 8);
+        }
+
+        ctx.fillStyle = baseColor;
+        ctx.beginPath();
+        ctx.roundRect(-radius, -radius, radius * 2, radius * 2, 5);
+        ctx.fill();
+
+        if (skin.name === 'Kartal') {
+            ctx.save();
+            ctx.beginPath(); ctx.roundRect(-radius, -radius, radius * 2, radius * 2, 5); ctx.clip();
+            ctx.fillStyle = 'white'; 
+            ctx.fillRect(-radius, -radius, radius * 2, radius * 1.3);
+            ctx.restore();
+        } else if (skin.name === 'Kanarya') {
+            ctx.fillStyle = '#fbc02d'; 
+            ctx.fillRect(-8, 0, 10, 6);
+        }
+
+        ctx.beginPath();
+        ctx.roundRect(-radius, -radius, radius * 2, radius * 2, 5);
+        ctx.stroke();
+
+        ctx.fillStyle = 'white';
+        ctx.fillRect(radius - 12, -radius + 4, 10, 10);
+        ctx.strokeRect(radius - 12, -radius + 4, 10, 10);
+        
+        ctx.fillStyle = 'black';
+        ctx.fillRect(radius - 8, -radius + 8, 4, 4);
+
+        let beakWidth = skin.name === 'Timsah' ? 16 : 12;
+        ctx.fillStyle = beakColor;
+        ctx.fillRect(radius, 0, beakWidth, 8);
+        ctx.strokeRect(radius, 0, beakWidth, 8);
+
+        if (skin.name === 'Timsah') {
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.moveTo(radius + 2, 8); ctx.lineTo(radius + 4, 12); ctx.lineTo(radius + 6, 8);
+            ctx.moveTo(radius + 8, 8); ctx.lineTo(radius + 10, 12); ctx.lineTo(radius + 12, 8);
+            ctx.moveTo(radius + 14, 8); ctx.lineTo(radius + 15, 11); ctx.lineTo(radius + 16, 8);
+            ctx.fill(); ctx.stroke();
+        }
+    }
+}
+
 const bird = {
     x: 100,
     y: 250,
@@ -111,28 +282,7 @@ const bird = {
         this.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (this.velocity * 0.12)));
         ctx.rotate(this.rotation);
 
-        // Kuşun Gövdesi (Hafif yuvarlatılmış kare)
-        ctx.fillStyle = colors.bird;
-        ctx.beginPath();
-        ctx.roundRect(-this.radius, -this.radius, this.radius * 2, this.radius * 2, 5); // 5 piksel yuvarlaklık
-        ctx.fill();
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = colors.birdOutline;
-        ctx.stroke();
-
-        // Göz (Beyaz Kare)
-        ctx.fillStyle = 'white';
-        ctx.fillRect(this.radius - 12, -this.radius + 4, 10, 10);
-        ctx.strokeRect(this.radius - 12, -this.radius + 4, 10, 10);
-        
-        // Göz Bebeği (Siyah Kare)
-        ctx.fillStyle = 'black';
-        ctx.fillRect(this.radius - 8, -this.radius + 8, 4, 4);
-
-        // Gaga (Kırmızı Dikdörtgen)
-        ctx.fillStyle = colors.birdBeak;
-        ctx.fillRect(this.radius, 0, 12, 8);
-        ctx.strokeRect(this.radius, 0, 12, 8);
+        drawSkinOnCtx(ctx, currentSkin, this.radius);
         
         ctx.restore();
     },
@@ -445,13 +595,17 @@ function renderStore() {
             e.stopPropagation();
             currentSkinId = skin.id;
             localStorage.setItem('pixelFlapSkin', currentSkinId);
-            updateBirdColors();
+            updateBirdSkin();
             renderStore();
             draw(); // Ekranı güncelle
         };
-        let preview = document.createElement('div');
+        let preview = document.createElement('canvas');
         preview.className = 'skin-preview';
-        preview.style.backgroundColor = skin.color;
+        preview.width = 36;
+        preview.height = 36;
+        let pCtx = preview.getContext('2d');
+        pCtx.translate(16, 18); // Merkez
+        drawSkinOnCtx(pCtx, skin, 10); // Küçültülmüş yarıçapla çiz
         item.appendChild(preview);
         skinsContainer.appendChild(item);
     });
