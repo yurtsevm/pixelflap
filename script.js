@@ -13,6 +13,7 @@ const skinsContainer = document.getElementById('skins-container');
 // Oyun Değişkenleri
 let frames = 0;
 let gameState = 'start'; // start, play, over
+let gameOverTime = 0;
 let score = 0;
 let highScore = localStorage.getItem('pixelFlapHighScore') || 0;
 
@@ -401,6 +402,7 @@ function startGame() {
 
 function gameOver() {
     gameState = 'over';
+    gameOverTime = Date.now();
     finalScoreDisplay.innerText = score;
     
     if (score > highScore) {
@@ -416,15 +418,21 @@ function gameOver() {
 function handleInput(e) {
     if (e.type === 'keydown' && e.code !== 'Space') return;
     
-    if (e.type === 'keydown' && e.code === 'Space') {
+    // Boşluk tuşunun kaydırmasını ve mobil tarayıcıların "touchstart" sonrasında sahte bir "mousedown" göndererek çift zıplamaya sebep olmasını engelle
+    if (e.cancelable && (e.type === 'keydown' || e.type === 'touchstart')) {
         e.preventDefault();
     }
     
     // Mağaza açıksa oyunu başlatma
     if (!storeScreen.classList.contains('hidden')) return;
 
-    if (gameState === 'start' || gameState === 'over') {
+    if (gameState === 'start') {
         startGame();
+    } else if (gameState === 'over') {
+        // Oyun bittikten sonra yanlışlıkla yeniden başlamayı engellemek için 1 saniye bekleme süresi
+        if (Date.now() - gameOverTime >= 1000) {
+            startGame();
+        }
     } else if (gameState === 'play') {
         bird.flap();
     }
